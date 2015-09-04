@@ -1,7 +1,10 @@
+var AKAM = AKAM || {};
+
+
 /**
  * @constructor
  */
-var CCSS = function() {
+AKAM.CCSS = function() {
   this.init.call(this);
 };
 
@@ -10,45 +13,70 @@ var CCSS = function() {
 /**
  * @type {Array}
  */
-CCSS.prototype.cssRules = [];
+AKAM.CCSS.prototype.criticalRules = [];
 
 
 /**
- * @this {CCSS}
+ * @this {AKAM.CCSS}
  */
-CCSS.prototype.init = function() {
+AKAM.CCSS.prototype.init = function() {
   this.parseStyleSheets(document.styleSheets);
+  this.crearCurrentStyles();
 
+  var criticalRules = this.criticalRules.join(' ');
+  
+  this.applyCriticalRules(criticalRules);
+  
+  this.downloadCriticalRules(criticalRules); 
+  
+  document.title = 'Extracted: ' + document.title;
+  
+  chrome.runtime.sendMessage({cssRule: criticalRules});
+};
+  
+
+/**
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.crearCurrentStyles = function() {
   var links = document.querySelectorAll('link[rel=stylesheet]');
 
   for (var i = links.length; i--;) {
     links[i].rel = '';
   }
+};
 
-  var cssRules = this.cssRules.join(' ');
-  
+
+/**
+ * @param {string} criticalRules .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.applyCriticalRules = function(criticalRules) {
   var style = document.createElement('style');
-  style.innerText = cssRules;
+  style.innerText = criticalRules;
   style.dataset.critical = '1';
   document.head.appendChild(style);
+};
 
-  document.title = 'Extracted: ' + document.title;
-  
+
+/**
+ * @param {string} criticalRules .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.downloadCriticalRules = function(criticalRules) {
   var a = document.createElement("a");
-  var file = new Blob([cssRules], {type: 'text/css'});
+  var file = new Blob([criticalRules], {type: 'text/css'});
   a.href = URL.createObjectURL(file);
   a.download = 'critical_' + location.href + '.css';
   a.click();
-  
-  chrome.runtime.sendMessage({cssRule: cssRules});
 };
-  
+
 
 /**
  * @param {StyleSheetList} styleSheets
- * @this {CCSS}
+ * @this {AKAM.CCSS}
  */
-CCSS.prototype.parseStyleSheets = function(styleSheets) {
+AKAM.CCSS.prototype.parseStyleSheets = function(styleSheets) {
   for (var i = styleSheets.length; i--;) {
     this.parseStyleSheet(styleSheets[i]);
   }
@@ -57,9 +85,9 @@ CCSS.prototype.parseStyleSheets = function(styleSheets) {
 
 /**
  * @param {CSSStyleSheet} styleSheet
- * @this {CCSS}
+ * @this {AKAM.CCSS}
  */
-CCSS.prototype.parseStyleSheet = function(styleSheet) {
+AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
   var rules = styleSheet.rules;
 
   if (rules && 0 < rules.length) {
@@ -81,23 +109,23 @@ CCSS.prototype.parseStyleSheet = function(styleSheet) {
 
 /**
  * @param {CSSStyleRule} rule
- * @this {CCSS}
+ * @this {AKAM.CCSS}
  */
-CCSS.prototype.parseCSSRule = function(rule) {
-  if (rule.cssRules) {
-    for (var i = rule.cssRules.length; i--;) {
-      this.parseCSSRule(rule.cssRules[i]);
+AKAM.CCSS.prototype.parseCSSRule = function(rule) {
+  if (rule.criticalRules) {
+    for (var i = rule.criticalRules.length; i--;) {
+      this.parseCSSRule(rule.criticalRules[i]);
     }
   } else {
     if (/:(before|after)/.test(rule.selectorText)) {
-      this.cssRules.push(rule.cssText);
+      this.criticalRules.push(rule.cssText);
     } else {
       var elements = document.querySelectorAll(rule.selectorText);
 
       for (var j = elements.length; j--;) {
         if (this.isInViewport(elements[j].getBoundingClientRect())) {
 
-          this.cssRules.push(rule.cssText);
+          this.criticalRules.push(rule.cssText);
         
           break;
         }
@@ -109,10 +137,10 @@ CCSS.prototype.parseCSSRule = function(rule) {
 
 /**
  * @param {ClientRect} rect .
- * @this {CCSS}
  * @return {boolean} .
+ * @this {AKAM.CCSS}
  */
-CCSS.prototype.isInViewport = function(rect) {
+AKAM.CCSS.prototype.isInViewport = function(rect) {
   if (rect.bottom < 0) {
     return false;
   }
@@ -133,4 +161,4 @@ CCSS.prototype.isInViewport = function(rect) {
 };
 
 
-var ccss = new CCSS();
+var ccss = new AKAM.CCSS();
