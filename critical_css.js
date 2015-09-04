@@ -23,7 +23,7 @@ AKAM.CCSS.prototype.init = function() {
   this.parseStyleSheets(document.styleSheets);
   this.crearCurrentStyles();
 
-  var criticalRules = this.criticalRules.join(' ');
+  var criticalRules = this.criticalRules.reverse().join(' ');
   
   this.applyCriticalRules(criticalRules);
   
