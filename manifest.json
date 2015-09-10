@@ -1,19 +1,19 @@
 {
-  "manifest_version": 2,
-
-  "name": "Critical CSS Extractor",
-  "description": "This extension extracts Critical CSS rules for the current page",
-  "version": "1.0",
-
   "background": {
     "scripts": ["background.js"],
-    "persistent": false
+    "persistent": true
   },
-
   "browser_action": {
     "default_icon": "icon.png"
   },
+  "description": "This extension extracts Critical CSS rules for the current page",
+  "devtools_page": "devtools.html",
+  "manifest_version": 2,
+  "name": "Critical CSS Extractor",
   "permissions": [
-    "activeTab"
-  ]
+    "activeTab",
+    "webRequest",
+    "<all_urls>"
+  ],
+  "version": "1.0"
 }

@@ -5,7 +5,6 @@ var AKAM = AKAM || {};
  * @constructor
  */
 AKAM.CCSS = function() {
-  this.init.call(this);
 };
 
 
@@ -19,56 +18,20 @@ AKAM.CCSS.prototype.criticalRules = [];
 /**
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.init = function() {
+AKAM.CCSS.prototype.extractCriticalRules = function() {
   this.parseStyleSheets(document.styleSheets);
-  this.crearCurrentStyles();
+  
+  this.removeCurrentStyles();
 
   var criticalRules = this.criticalRules.reverse().join(' ');
   
-  this.applyCriticalRules(criticalRules);
+  this.applyRules(criticalRules, 'critical');
   
   this.downloadCriticalRules(criticalRules); 
   
   document.title = 'Extracted: ' + document.title;
   
   chrome.runtime.sendMessage({cssRule: criticalRules});
-};
-  
-
-/**
- * @this {AKAM.CCSS}
- */
-AKAM.CCSS.prototype.crearCurrentStyles = function() {
-  var links = document.querySelectorAll('link[rel=stylesheet]');
-
-  for (var i = links.length; i--;) {
-    links[i].rel = '';
-  }
-};
-
-
-/**
- * @param {string} criticalRules .
- * @this {AKAM.CCSS}
- */
-AKAM.CCSS.prototype.applyCriticalRules = function(criticalRules) {
-  var style = document.createElement('style');
-  style.innerText = criticalRules;
-  style.dataset.critical = '1';
-  document.head.appendChild(style);
-};
-
-
-/**
- * @param {string} criticalRules .
- * @this {AKAM.CCSS}
- */
-AKAM.CCSS.prototype.downloadCriticalRules = function(criticalRules) {
-  var a = document.createElement("a");
-  var file = new Blob([criticalRules], {type: 'text/css'});
-  a.href = URL.createObjectURL(file);
-  a.download = 'critical_' + location.href + '.css';
-  a.click();
 };
 
 
@@ -112,9 +75,9 @@ AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.parseCSSRule = function(rule) {
-  if (rule.criticalRules) {
-    for (var i = rule.criticalRules.length; i--;) {
-      this.parseCSSRule(rule.criticalRules[i]);
+  if (rule.cssRules) {
+    for (var i = rule.cssRules.length; i--;) {
+      this.parseCSSRule(rule.cssRules[i]);
     }
   } else {
     if (/:(before|after)/.test(rule.selectorText)) {
@@ -145,7 +108,7 @@ AKAM.CCSS.prototype.isInViewport = function(rect) {
     return false;
   }
 
-  if (window.innerHeight < rect.top) {
+  if (window.screen.height < rect.top) {
     return false;
   }
 
@@ -153,7 +116,7 @@ AKAM.CCSS.prototype.isInViewport = function(rect) {
     return false;
   }
 
-  if (window.innerWidth < rect.left) {
+  if (window.screen.width < rect.left) {
     return false;
   }
 
@@ -161,4 +124,45 @@ AKAM.CCSS.prototype.isInViewport = function(rect) {
 };
 
 
-var ccss = new AKAM.CCSS();
+/**
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.removeCurrentStyles = function() {
+  var links = document.querySelectorAll('link[rel=stylesheet]');
+
+  for (var i = links.length; i--;) {
+    links[i].rel = '';
+  }
+  
+  var styles = document.querySelectorAll('style[data-external=true]');
+  
+  for (var j = styles.length; j--;) {
+    styles[j].parentNode.removeChild(styles[j]);
+  }
+};
+
+
+/**
+ * @param {string} criticalRules .
+ * @param {string} type .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.applyRules = function(rules, type) {
+  var style = document.createElement('style');
+  style.innerText = rules;
+  style.dataset[type] = 'true';
+  document.head.appendChild(style);
+};
+
+
+/**
+ * @param {string} criticalRules .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.downloadCriticalRules = function(criticalRules) {
+  var a = document.createElement("a");
+  var file = new Blob([criticalRules], {type: 'text/css'});
+  a.href = URL.createObjectURL(file);
+  a.download = 'critical_' + document.title + '.css';
+  a.click();
+};
