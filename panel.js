@@ -1,8 +1,17 @@
+var backgroundPageConnection;
+
+
 window.onload = function() {
   document.getElementsByTagName('button')[0].onclick = handleClick;
+
+  backgroundPageConnection = chrome.runtime.connect({
+    name: 'devtools-page'
+  });
+  
+  sendMessage({handler: 'injectContentScript'});
 };
 
-  
+ 
 function handleClick() {
   getResources()
   .then(getContents)
@@ -42,12 +51,11 @@ function getContent(resource) {
 
 
 function parseCSSTexts(contents) {
-  var backgroundPageConnection = chrome.runtime.connect({
-    name: "devtools-page"
-  });
-  
-  backgroundPageConnection.postMessage({
-    tabId: chrome.devtools.inspectedWindow.tabId,
-    cssTexts: contents
-  });
+  sendMessage({handler: 'executeContentScript', cssTexts: contents});
+}
+
+
+function sendMessage(message) {
+  message.tabId = chrome.devtools.inspectedWindow.tabId;
+  backgroundPageConnection.postMessage(message);
 }

@@ -1,38 +1,41 @@
 var tabId;
 var cssTexts = [];
 
-chrome.runtime.onConnect.addListener(function(port) {
+var messageHandlers = {};
 
+
+chrome.runtime.onConnect.addListener(handleConnect);
+
+  
+function handleConnect(port) {
   if (port.name == 'devtools-page') {
-    var devToolsListener = function(message, sender, sendResponse) {
-      tabId = message.tabId;
-      
-      cssTexts = message.cssTexts.filter(function(cssText) {
-        return typeof cssText == 'string';
-      });
-      
-      injectContentScript()
-      .then(initiateConstructor)
-      .then(applyRules)
-      .then(extractCriticalRules);
-    };
-      
+    messageHandlers.injectContentScript = injectContentScript;
+    messageHandlers.executeContentScript = executeContentScript;
+    
     port.onMessage.addListener(devToolsListener);
   }
-});
-
-
-function injectContentScript() {
-  var promise = new Promise(function(resolve, reject) {
-    chrome.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
-      resolve();
-    });
-  });
-  
-  return promise;
 }
 
 
+function injectContentScript(message, sender, sendRequest) {
+  chrome.tabs.executeScript(tabId, {file: 'content_script.js'});
+}   
+  
+ 
+function executeContentScript(message, sender, sendResponse) {
+  cssTexts = message.cssTexts.filter(function(cssText) {
+    return typeof cssText == 'string';
+  });
+  
+  initiateConstructor().then(applyRules).then(extractCriticalRules);
+}
+
+
+function promiseExecuteScript(callback) {
+  return new Promise(callback);
+}
+
+ 
 function initiateConstructor() {
   var promise = new Promise(function(resolve, reject) {
     chrome.tabs.executeScript(tabId, {code: 'var ccss = new AKAM.CCSS();'}, function() {
@@ -54,12 +57,11 @@ function applyRules() {
 
 
 function applyRule(cssText) {
+  cssText = cssText.replace(/'/g, '\\\'');
+  cssText = cssText.replace(/\n/g, '');
+  cssText = cssText.replace(/\r/g, '');
+    
   var promise = new Promise(function(resolve, reject) {
-    
-    cssText = cssText.replace(/'/g, '\\\'');
-    cssText = cssText.replace(/\n/g, '');
-    cssText = cssText.replace(/\r/g, '');
-    
     chrome.tabs.executeScript(tabId, {code: 'ccss.applyRules(\'' + cssText + '\', \'external\')'}, function() {
       resolve();
     });
@@ -77,4 +79,10 @@ function extractCriticalRules() {
   });
   
   return promise;
+}
+     
+     
+function devToolsListener(message, sender, sendResponse) {
+  tabId = message.tabId;
+  messageHandlers[message.handler](message, sender, sendResponse);
 }

@@ -52,7 +52,7 @@ AKAM.CCSS.prototype.parseStyleSheets = function(styleSheets) {
  */
 AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
   var rules = styleSheet.rules;
-
+  
   if (rules && 0 < rules.length) {
     
     var rule;
@@ -87,7 +87,6 @@ AKAM.CCSS.prototype.parseCSSRule = function(rule) {
 
       for (var j = elements.length; j--;) {
         if (this.isInViewport(elements[j].getBoundingClientRect())) {
-
           this.criticalRules.push(rule.cssText);
         
           break;
