@@ -3,7 +3,7 @@
     "scripts": ["background.js"],
     "persistent": true
   },
-  "description": "This extension extracts Critical CSS rules for the current page",
+  "description": "extract Critical CSS rules for the current page",
   "devtools_page": "devtools.html",
   "manifest_version": 2,
   "name": "Critical CSS Extractor",

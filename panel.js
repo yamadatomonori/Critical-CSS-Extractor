@@ -15,7 +15,7 @@ window.onload = function() {
 function handleClick() {
   getResources()
   .then(getContents)
-  .then(parseCSSTexts);
+  .then(parseCSSText);
 }
 
 
@@ -42,7 +42,7 @@ function getContents(resources) {
 function getContent(resource) {
   var promise = new Promise(function(resolve, reject) {
     resource.getContent(function(content) {
-      resolve(content);
+      resolve({cssText: content, url: resource.url});
     });
   });
   
@@ -50,8 +50,49 @@ function getContent(resource) {
 }
 
 
-function parseCSSTexts(contents) {
-  sendMessage({handler: 'executeContentScript', cssTexts: contents});
+function parseCSSText(contents) {
+  var relativePathes = [];
+  var pattern = 'url\\((?:\\\'|"|)(\\..+?)\\)';
+  
+  contents = contents.map(function(content) {
+    relativePathes = content.cssText.match(new RegExp(pattern, 'g')) || [];
+    
+    relativePathes.forEach(function(relativePath) {
+      relativePath = relativePath.match(new RegExp(pattern))[1];
+      
+      content.cssText = 
+          content.cssText
+            .split(relativePath)
+            .join(getAbsolutePath(
+                content.url, relativePath));
+    });
+    
+    return content;
+  });
+  
+  sendMessage({handler: 'executeContentScript', contents: contents});
+}
+
+
+function getAbsolutePath(baseUrl, relativePath) {
+  var directoriesAbsolutePath = baseUrl.split('/');
+  var directoriesRelativePath = relativePath.split('/');
+  
+  directoriesAbsolutePath.pop();
+  
+  var directory = '';
+  
+  while((directory = directoriesRelativePath.shift())) {
+    if (directory == '.') {
+      continue;
+    } else if (directory == '..') {
+      directoriesAbsolutePath.pop();
+    } else {
+      directoriesAbsolutePath.push(directory);
+    }
+  }
+  
+  return directoriesAbsolutePath.join('/');
 }
 
 

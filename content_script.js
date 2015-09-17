@@ -63,7 +63,9 @@ AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
       if (rule.constructor == CSSImportRule) {
         this.parseStyleSheet(rule.styleSheet);
       } else {
-      	this.parseCSSRule(rule);
+        var href = rule.href || location.href;
+        
+      	this.parseCSSRule(rule, href.match(/https?:\/\/(.+?)\//));
       }
     }
   }
@@ -71,28 +73,33 @@ AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
 
 
 /**
- * @param {CSSStyleRule} rule
+ * @param {CSSStyleRule} rule .
+ * @param {string} host .
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.parseCSSRule = function(rule) {
-  if (rule.cssRules) {
-    for (var i = rule.cssRules.length; i--;) {
-      this.parseCSSRule(rule.cssRules[i]);
-    }
-  } else {
-    if (/:(before|after)/.test(rule.selectorText)) {
+AKAM.CCSS.prototype.parseCSSRule = function(rule, host) {
+  switch(rule.constructor) {
+  
+    case CSSMediaRule:
+        for (var i = rule.cssRules.length; i--;) {
+          this.parseCSSRule(rule.cssRules[i]);
+        }
+      break;
+    case CSSFontFaceRule:
+    case CSSKeyframesRule:
       this.criticalRules.push(rule.cssText);
-    } else {
-      var elements = document.querySelectorAll(rule.selectorText);
-
+      break;
+    default:
+      var elements = document.querySelectorAll(rule.selectorText.split(':')[0]);
+  
       for (var j = elements.length; j--;) {
         if (this.isInViewport(elements[j].getBoundingClientRect())) {
+          
           this.criticalRules.push(rule.cssText);
         
           break;
         }
       }
-    }
   }
 };
 

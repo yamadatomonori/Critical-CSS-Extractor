@@ -1,5 +1,4 @@
 var tabId;
-var cssTexts = [];
 
 var messageHandlers = {};
 
@@ -23,11 +22,9 @@ function injectContentScript(message, sender, sendRequest) {
   
  
 function executeContentScript(message, sender, sendResponse) {
-  cssTexts = message.cssTexts.filter(function(cssText) {
-    return typeof cssText == 'string';
-  });
-  
-  initiateConstructor().then(applyRules).then(extractCriticalRules);
+  initiateConstructor()
+  .then(applyRules.bind(undefined, message.contents))
+  .then(extractCriticalRules);
 }
 
 
@@ -47,9 +44,9 @@ function initiateConstructor() {
 }
 
 
-function applyRules() {
-  var promise = Promise.all(cssTexts.map(function(cssText) {
-    return applyRule(cssText);
+function applyRules(contents) {
+  var promise = Promise.all(contents.map(function(content) {
+    return applyRule(content.cssText);
   }));
   
   return promise;
