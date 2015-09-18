@@ -81,9 +81,12 @@ AKAM.CCSS.prototype.parseCSSRule = function(rule, host) {
   switch(rule.constructor) {
   
     case CSSMediaRule:
+      
+      if (window.matchMedia(rule.media.mediaText).matches === true) {
         for (var i = rule.cssRules.length; i--;) {
-          this.parseCSSRule(rule.cssRules[i]);
+           this.parseCSSRule(rule.cssRules[i]);
         }
+      }
       break;
     case CSSFontFaceRule:
     case CSSKeyframesRule:
