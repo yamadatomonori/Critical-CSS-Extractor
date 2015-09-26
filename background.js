@@ -28,11 +28,6 @@ function executeContentScript(message, sender, sendResponse) {
 }
 
 
-function promiseExecuteScript(callback) {
-  return new Promise(callback);
-}
-
- 
 function initiateConstructor() {
   var promise = new Promise(function(resolve, reject) {
     chrome.tabs.executeScript(tabId, {code: 'var ccss = new AKAM.CCSS();'}, function() {
