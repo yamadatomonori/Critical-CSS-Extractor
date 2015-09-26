@@ -16,6 +16,18 @@ AKAM.CCSS.prototype.criticalRules = [];
 
 
 /**
+ * @const {Array<string>
+ */
+AKAM.CCSS.prototype.PSEUDO_ELEMENTS = [
+  'after',
+  'before',
+  'first-letter',
+  'first-line',
+  'selection'
+];
+
+
+/**
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.extractCriticalRules = function() {
@@ -79,9 +91,7 @@ AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
  */
 AKAM.CCSS.prototype.parseCSSRule = function(rule, host) {
   switch(rule.constructor) {
-  
     case CSSMediaRule:
-      
       if (window.matchMedia(rule.media.mediaText).matches === true) {
         for (var i = rule.cssRules.length; i--;) {
            this.parseCSSRule(rule.cssRules[i]);
@@ -93,7 +103,7 @@ AKAM.CCSS.prototype.parseCSSRule = function(rule, host) {
       this.criticalRules.push(rule.cssText);
       break;
     default:
-      var elements = document.querySelectorAll(rule.selectorText.split(':')[0]);
+      var elements = this.querySelectorAll(rule.selectorText);
   
       for (var j = elements.length; j--;) {
         if (this.isInViewport(elements[j].getBoundingClientRect())) {
@@ -107,6 +117,90 @@ AKAM.CCSS.prototype.parseCSSRule = function(rule, host) {
 };
 
 
+/**
+ * @param {string} selectorTextUnion .
+ * @return {Array} .
+ */
+AKAM.CCSS.prototype.querySelectorAll = function(selectorTextUnion) {
+  return selectorTextUnion.split(',')
+      .map(this.mapSelectorTextNodes, this)
+      .reduce(function(nodesLeft, nodesRight) {
+          return nodesLeft.concat(nodesRight);
+      });
+};
+
+
+/**
+ * @param {string} selectorText .
+ * @return {Array<Node>} .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.mapSelectorTextNodes = function(selectorText) {
+  selectorText = this.removePseudoElements(selectorText);
+  
+  var nodeList;
+  
+  try {
+    nodeList = document.querySelectorAll(selectorText);
+  } catch (er) {
+    this.catchErrorDocumentQuerySelectorAll(er, selectorText);
+  }
+  
+  var nodes = [];
+  
+  if (nodeList instanceof NodeList) {
+    nodes = Array.prototype.map.call(nodeList, function(node) {
+      return node;
+    });
+  }
+  
+  if (nodes.length === 0 && /:/.test(selectorText)) {
+    nodes = this.mapSelectorTextNodes(selectorText.split(':')[0]);
+  } 
+  
+  return nodes;
+};
+
+
+/**
+ * @param {string} selectorText .
+ * @return {string} .
+ */
+AKAM.CCSS.prototype.removePseudoElements = function(selectorText) {
+  return selectorText.replace(this.getPatternPseudoElements(), '');
+};
+
+
+/**
+ * @return {RegEx}
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.getPatternPseudoElements = function() {
+  return new RegExp(':{1,2}(' + this.PSEUDO_ELEMENTS.join('|') + ')$');
+};
+
+
+/**
+ * @param {Error} er .
+ * @param {string} selectorText .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll = function(er, selectorText) {
+  switch (er.constructor) {
+    case DOMException:
+      if (er.code == DOMException.prototype.SYNTAX_ERR) {
+        console.info('ignore invalid selectorText: ' + selectorText);
+      } else {
+        throw er;
+      }
+      
+      break;
+    default:
+      throw er;
+  }
+};
+ 
+ 
 /**
  * @param {ClientRect} rect .
  * @return {boolean} .

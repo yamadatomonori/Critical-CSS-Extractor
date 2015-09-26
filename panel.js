@@ -50,6 +50,10 @@ function getContent(resource) {
 }
 
 
+/**
+ * @param {Array<content>} contents .
+ * @see https://developer.chrome.com/extensions/devtools_inspectedWindow#type-Resource
+ */
 function parseCSSText(contents) {
   var relativePathes = [];
   var pattern = 'url\\((?:\\\'|"|)(\\..+?)\\)';
