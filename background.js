@@ -54,6 +54,7 @@ function applyRules(contents, externalStyleSheets) {
 
 
 function applyRule(cssText) {
+  cssText = cssText.replace(/\\/g, '\\\\');
   cssText = cssText.replace(/'/g, '\\\'');
   cssText = cssText.replace(/\n/g, '');
   cssText = cssText.replace(/\r/g, '');
