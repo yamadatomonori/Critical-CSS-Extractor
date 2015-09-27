@@ -5,6 +5,21 @@ var AKAM = AKAM || {};
  * @constructor
  */
 AKAM.CCSS = function() {
+  
+  var importedStyleSheets = 
+      Array.prototype.filter.call(document.styleSheets, function(styleSheet) {
+        return styleSheet.href;
+      }).map(function(styleSheet) {
+        return styleSheet.href;
+      });
+
+  
+  /**
+   * @return {Array<string>} .
+   */
+  this.getExternalStyleSheets = function() {
+    return importedStyleSheets;
+  };
 };
 
 

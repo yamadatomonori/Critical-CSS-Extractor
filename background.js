@@ -22,16 +22,17 @@ function injectContentScript(message, sender, sendRequest) {
   
  
 function executeContentScript(message, sender, sendResponse) {
-  initiateConstructor()
+  executeCode('var ccss = new AKAM.CCSS();')
+  .then(executeCode.bind(undefined, 'ccss.getExternalStyleSheets();'))
   .then(applyRules.bind(undefined, message.contents))
-  .then(extractCriticalRules);
+  .then(executeCode.bind(undefined, 'ccss.extractCriticalRules();'));
 }
 
 
-function initiateConstructor() {
+function executeCode(code) {
   var promise = new Promise(function(resolve, reject) {
-    chrome.tabs.executeScript(tabId, {code: 'var ccss = new AKAM.CCSS();'}, function() {
-      resolve();
+    chrome.tabs.executeScript(tabId, {code: code}, function(results) {
+      resolve(results[0]);
     });
   });
   
@@ -39,7 +40,11 @@ function initiateConstructor() {
 }
 
 
-function applyRules(contents) {
+function applyRules(contents, externalStyleSheets) {
+  contents = contents.filter(function(content) {
+    return 0 <= externalStyleSheets.indexOf(content.url);
+  });
+  
   var promise = Promise.all(contents.map(function(content) {
     return applyRule(content.cssText);
   }));
@@ -53,27 +58,10 @@ function applyRule(cssText) {
   cssText = cssText.replace(/\n/g, '');
   cssText = cssText.replace(/\r/g, '');
     
-  var promise = new Promise(function(resolve, reject) {
-    chrome.tabs.executeScript(tabId, {code: 'ccss.applyRules(\'' + cssText + '\', \'external\')'}, function() {
-      resolve();
-    });
-  });
-  
-  return promise;
+  return executeCode('ccss.applyRules(\'' + cssText + '\', \'external\')');
 }
 
 
-function extractCriticalRules() {
-  var promise = new Promise(function(resolve, reject) {
-    chrome.tabs.executeScript(tabId, {code: 'ccss.extractCriticalRules();'}, function() {
-      resolve();
-    });
-  });
-  
-  return promise;
-}
-     
-     
 function devToolsListener(message, sender, sendResponse) {
   tabId = message.tabId;
   messageHandlers[message.handler](message, sender, sendResponse);

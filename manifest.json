@@ -9,8 +9,7 @@
   "name": "Critical CSS Extractor",
   "permissions": [
     "activeTab",
-    "webRequest",
     "<all_urls>"
   ],
-  "version": "2.3"
+  "version": "2.4"
 }
