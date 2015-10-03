@@ -5,33 +5,24 @@ var AKAM = AKAM || {};
  * @constructor
  */
 AKAM.CCSS = function() {
-  
-  var importedStyleSheets = 
-      Array.prototype.filter.call(document.styleSheets, function(styleSheet) {
-        return styleSheet.href;
-      }).map(function(styleSheet) {
+  var crossOriginStyleSheets =
+      Array.prototype.filter.call(document.styleSheets, this.isCrossOriginStyleSheet).
+      map(function(styleSheet) {
         return styleSheet.href;
       });
-
-  
+          
+          
   /**
    * @return {Array<string>} .
    */
-  this.getExternalStyleSheets = function() {
-    return importedStyleSheets;
+  this.getCrossOriginStyleSheets = function() {
+    return crossOriginStyleSheets;
   };
 };
 
 
-
 /**
- * @type {Array}
- */
-AKAM.CCSS.prototype.criticalRules = [];
-
-
-/**
- * @const {Array<string>
+ * @const {Array<string>}
  */
 AKAM.CCSS.prototype.PSEUDO_ELEMENTS = [
   'after',
@@ -43,92 +34,89 @@ AKAM.CCSS.prototype.PSEUDO_ELEMENTS = [
 
 
 /**
+ * @param {CSSStyleSheet}
+ * @return {boolean}
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.isCrossOriginStyleSheet = function(styleSheet) {
+  return styleSheet.href && styleSheet.rules === null;
+};
+
+
+/**
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.extractCriticalRules = function() {
-  this.parseStyleSheets(document.styleSheets);
-  
-  this.removeCurrentStyles();
+  var criticalRules = Array.prototype.reduce.call(
+      document.styleSheets, this.parseStyleSheet.bind(this), []).join(' ');
 
-  var criticalRules = this.criticalRules.reverse().join(' ');
-  
-  this.applyRules(criticalRules, 'critical');
-  
   this.downloadCriticalRules(criticalRules); 
   
-  document.title = 'Extracted: ' + document.title;
-  
   chrome.runtime.sendMessage({cssRule: criticalRules});
-};
-
-
-/**
- * @param {StyleSheetList} styleSheets
- * @this {AKAM.CCSS}
- */
-AKAM.CCSS.prototype.parseStyleSheets = function(styleSheets) {
-  for (var i = styleSheets.length; i--;) {
-    this.parseStyleSheet(styleSheets[i]);
-  }
-};
   
+  var idRemove = 'remove';
+  
+  var valueDefault = {};
+  valueDefault[idRemove] = true;
+
+  chrome.storage.sync.get(valueDefault, function(items) {
+    if (items[idRemove]) {
+      this.removeCurrentStyles();
+      
+      this.applyRules(criticalRules, 'critical');
+  
+      document.title = 'Extracted: ' + document.title;
+    }
+  }.bind(this));
+};
+
 
 /**
+ * @param {Array<string>} criticalRules .
  * @param {CSSStyleSheet} styleSheet
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.parseStyleSheet = function(styleSheet) {
-  var rules = styleSheet.rules;
-  
-  if (rules && 0 < rules.length) {
-    
-    var rule;
-
-    for (var i = rules.length; i--;) {
-      rule = rules[i];
-      
-      if (rule.constructor == CSSImportRule) {
-        this.parseStyleSheet(rule.styleSheet);
-      } else {
-        var href = rule.href || location.href;
-        
-      	this.parseCSSRule(rule, href.match(/https?:\/\/(.+?)\//));
-      }
-    }
-  }
+AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
+  return Array.prototype.reduce.call(
+      styleSheet.rules || [], this.parseCSSRule.bind(this), criticalRules);
 };
 
 
 /**
+ * @param {Array<string>} criticalRules .
  * @param {CSSStyleRule} rule .
- * @param {string} host .
+ * @return {Array<string>} .
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.parseCSSRule = function(rule, host) {
+AKAM.CCSS.prototype.parseCSSRule = function(criticalRules, rule) {
   switch(rule.constructor) {
-    case CSSMediaRule:
-      if (window.matchMedia(rule.media.mediaText).matches === true) {
-        for (var i = rule.cssRules.length; i--;) {
-           this.parseCSSRule(rule.cssRules[i]);
-        }
-      }
-      break;
     case CSSFontFaceRule:
     case CSSKeyframesRule:
-      this.criticalRules.push(rule.cssText);
+      criticalRules.push(rule.cssText);
+      break;
+    case CSSImportRule:
+      this.parseStyleSheet(criticalRules, rule.styleSheet);
+      break;
+    case CSSMediaRule:
+      if (window.matchMedia(rule.media.mediaText).matches === true) {
+        Array.prototype.forEach.call(rule.cssRules, function(rule) {
+          this.parseCSSRule(criticalRules, rule);
+        }, this);
+      }
       break;
     default:
       var elements = this.querySelectorAll(rule.selectorText);
-  
-      for (var j = elements.length; j--;) {
-        if (this.isInViewport(elements[j].getBoundingClientRect())) {
-          
-          this.criticalRules.push(rule.cssText);
-        
-          break;
-        }
+      
+      var isInViewport = Array.prototype.some.call(elements, function(element) {
+        return this.isInViewport(element.getBoundingClientRect());
+      }, this);
+      
+      if (isInViewport) {
+        criticalRules.push(rule.cssText);
       }
   }
+  
+  return criticalRules;
 };
 
 
@@ -168,10 +156,6 @@ AKAM.CCSS.prototype.mapSelectorTextNodes = function(selectorText) {
       return node;
     });
   }
-  
-  if (nodes.length === 0 && /:/.test(selectorText)) {
-    nodes = this.mapSelectorTextNodes(selectorText.split(':')[0]);
-  } 
   
   return nodes;
 };
@@ -246,17 +230,11 @@ AKAM.CCSS.prototype.isInViewport = function(rect) {
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.removeCurrentStyles = function() {
-  var links = document.querySelectorAll('link[rel=stylesheet]');
-
-  for (var i = links.length; i--;) {
-    links[i].rel = '';
-  }
-  
-  var styles = document.querySelectorAll('style[data-external=true]');
-  
-  for (var j = styles.length; j--;) {
-    styles[j].parentNode.removeChild(styles[j]);
-  }
+  Array.prototype.forEach.call(
+      document.querySelectorAll('link, style'),
+      function(element) {
+        element.parentNode.removeChild(element);
+      });
 };
 
 

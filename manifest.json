@@ -7,9 +7,15 @@
   "devtools_page": "devtools.html",
   "manifest_version": 2,
   "name": "Critical CSS Extractor",
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  },
   "permissions": [
     "activeTab",
+    "storage",
+    "tabs",
     "<all_urls>"
   ],
-  "version": "2.5"
+  "version": "2.6"
 }

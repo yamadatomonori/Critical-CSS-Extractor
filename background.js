@@ -22,9 +22,18 @@ function injectContentScript(message, sender, sendRequest) {
   
  
 function executeContentScript(message, sender, sendResponse) {
+  /*
+  var tab = chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
+    chrome.tabs.create({
+      active: false,
+      url: tab[0].url
+    });
+  });
+  */
+  
   executeCode('var ccss = new AKAM.CCSS();')
-  .then(executeCode.bind(undefined, 'ccss.getExternalStyleSheets();'))
-  .then(applyRules.bind(undefined, message.contents))
+  .then(executeCode.bind(undefined, 'ccss.getCrossOriginStyleSheets();'))
+  .then(inlineCrossOriginStyleSheets.bind(undefined, message.contents))
   .then(executeCode.bind(undefined, 'ccss.extractCriticalRules();'));
 }
 
@@ -40,9 +49,9 @@ function executeCode(code) {
 }
 
 
-function applyRules(contents, externalStyleSheets) {
+function inlineCrossOriginStyleSheets(contents, crossOriginStyleSheets) {
   contents = contents.filter(function(content) {
-    return 0 <= externalStyleSheets.indexOf(content.url);
+    return 0 <= crossOriginStyleSheets.indexOf(content.url);
   });
   
   var promise = Promise.all(contents.map(function(content) {

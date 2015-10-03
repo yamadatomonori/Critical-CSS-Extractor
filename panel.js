@@ -3,6 +3,14 @@ var backgroundPageConnection;
 
 window.onload = function() {
   document.getElementsByTagName('button')[0].onclick = handleClick;
+  
+  document.querySelector('#go-to-options').addEventListener('click', function() {
+    if (chrome.runtime.openOptionsPage) {
+      chrome.runtime.openOptionsPage();
+    } else {
+      window.open(chrome.runtime.getURL('options.html'));
+    }
+  });
 
   backgroundPageConnection = chrome.runtime.connect({
     name: 'devtools-page'
