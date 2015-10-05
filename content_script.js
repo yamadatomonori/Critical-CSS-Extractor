@@ -18,6 +18,24 @@ AKAM.CCSS = function() {
   this.getCrossOriginStyleSheets = function() {
     return crossOriginStyleSheets;
   };
+  
+  
+  var promiseStorage = new Promise(function(resolve, reject) {
+    chrome.storage.sync.get({
+      perfRemove: true,
+      perfWindow: true
+    }, function(items) {
+      resolve(items);
+    });
+  });
+  
+  
+  /**
+   * @return {Promise} .
+   */
+  this.getPromiseStorage = function() {
+    return promiseStorage;
+  };
 };
 
 
@@ -54,13 +72,8 @@ AKAM.CCSS.prototype.extractCriticalRules = function() {
   
   chrome.runtime.sendMessage({cssRule: criticalRules});
   
-  var idRemove = 'remove';
-  
-  var valueDefault = {};
-  valueDefault[idRemove] = true;
-
-  chrome.storage.sync.get(valueDefault, function(items) {
-    if (items[idRemove]) {
+  this.getPromiseStorage().then(function(items) {
+    if (items.perfRemove) {
       this.removeCurrentStyles();
       
       this.applyRules(criticalRules, 'critical');

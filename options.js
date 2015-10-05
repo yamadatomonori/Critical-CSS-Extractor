@@ -1,25 +1,35 @@
-var idRemove = 'remove';
-
-var remove = document.getElementById(idRemove);
-
-document.addEventListener('DOMContentLoaded', restoreOptions);
-
-remove.onchange = saveOption;
-
-
-function restoreOptions() {
-  var valueDefault = {};
-  valueDefault[idRemove] = true;
+var promise = new Promise(function(resolve, reject) {
+  var valueDefault = {
+    'prefRemove': true
+  };
   
   chrome.storage.sync.get(valueDefault, function(items) {
-    remove.checked = items[idRemove];
+    resolve(items);
   });
-}
+});
+
+
+promise.then(function(items) {
+  Array.prototype.forEach.call(document.forms.pref.elements, function(element) {
+    element.checked = items[element.name];
+    
+    element.onchange = saveOption;
+  });
+});
+
+
+
+
+
+
+
 
 
 function saveOption() {
   var valueNew = {};
-  valueNew[this.id] = this.checked;
+  valueNew[this.name] = this.checked;
   
-  chrome.storage.sync.set(valueNew, function() {});
+  chrome.storage.sync.set(valueNew, function() {
+    console.log(arguments);
+  });
 }

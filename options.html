@@ -2,15 +2,23 @@
 <head>
   <title>Critical CSS Extractor</title>
   <style>
-    body: { padding: 10px; }
+    body { padding: 0.5em; }
+    ul {list-style-type: none; }
+    li {margin-top: 0.5em; }
   </style>
 </head>
 
 <body>
-  <label>
-    <input type="checkbox" id="remove"> Remove non critical CSS rules from a current page.
-  </label>
-
+  <form name="pref">
+  <ul>
+    <li>
+      <label>
+        <input type="checkbox" name="prefRemove"> Remove non critical CSS rules from a current page.
+      </label>
+    </li>
+  </ul>
+  </form>
+  
   <script src="options.js"></script>
 </body>
 </html>

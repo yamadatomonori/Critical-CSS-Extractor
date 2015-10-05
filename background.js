@@ -22,14 +22,12 @@ function injectContentScript(message, sender, sendRequest) {
   
  
 function executeContentScript(message, sender, sendResponse) {
-  /*
   var tab = chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
     chrome.tabs.create({
       active: false,
       url: tab[0].url
     });
   });
-  */
   
   executeCode('var ccss = new AKAM.CCSS();')
   .then(executeCode.bind(undefined, 'ccss.getCrossOriginStyleSheets();'))
