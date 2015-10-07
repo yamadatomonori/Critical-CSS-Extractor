@@ -47,7 +47,8 @@ AKAM.CCSS.prototype.PSEUDO_ELEMENTS = [
   'before',
   'first-letter',
   'first-line',
-  'selection'
+  'selection',
+  '-webkit-\\S+'
 ];
 
 
@@ -188,7 +189,7 @@ AKAM.CCSS.prototype.removePseudoElements = function(selectorText) {
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.getPatternPseudoElements = function() {
-  return new RegExp(':{1,2}(' + this.PSEUDO_ELEMENTS.join('|') + ')$');
+  return new RegExp('::(:?' + this.PSEUDO_ELEMENTS.join('|') + ')$');
 };
 
 
@@ -219,15 +220,7 @@ AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll = function(er, selectorTe
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.isInViewport = function(rect) {
-  if (rect.bottom < 0) {
-    return false;
-  }
-
   if (window.screen.height < rect.top) {
-    return false;
-  }
-
-  if (rect.right < 0) {
     return false;
   }
 
