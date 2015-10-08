@@ -1,5 +1,3 @@
-var tabId;
-
 var messageHandlers = {};
 
 
@@ -17,26 +15,28 @@ function handleConnect(port) {
 
 
 function injectContentScript(message, sender, sendRequest) {
-  chrome.tabs.executeScript(tabId, {file: 'content_script.js'});
+  chrome.tabs.executeScript(message.tabId, {file: 'content_script.js'});
 }   
   
  
 function executeContentScript(message, sender, sendResponse) {
-  var tab = chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
+  var tabId = message.tabId;
+  
+  chrome.tabs.get(tabId, function(tab) {
     chrome.tabs.create({
       active: false,
-      url: tab[0].url
+      url: tab.url
     });
   });
   
-  executeCode('var ccss = new AKAM.CCSS();')
-  .then(executeCode.bind(undefined, 'ccss.getCrossOriginStyleSheets();'))
-  .then(inlineCrossOriginStyleSheets.bind(undefined, message.contents))
-  .then(executeCode.bind(undefined, 'ccss.extractCriticalRules();'));
+  executeCode(tabId, 'var ccss = new AKAM.CCSS();')
+  .then(executeCode.bind(undefined, tabId, 'ccss.getCrossOriginStyleSheets();'))
+  .then(inlineCrossOriginStyleSheets.bind(undefined, tabId, message.contents))
+  .then(executeCode.bind(undefined, tabId, 'ccss.extractCriticalRules();'));
 }
 
 
-function executeCode(code) {
+function executeCode(tabId, code) {
   var promise = new Promise(function(resolve, reject) {
     chrome.tabs.executeScript(tabId, {code: code}, function(results) {
       resolve(results[0]);
@@ -47,26 +47,26 @@ function executeCode(code) {
 }
 
 
-function inlineCrossOriginStyleSheets(contents, crossOriginStyleSheets) {
+function inlineCrossOriginStyleSheets(tabId, contents, crossOriginStyleSheets) {
   contents = contents.filter(function(content) {
     return 0 <= crossOriginStyleSheets.indexOf(content.url);
   });
   
   var promise = Promise.all(contents.map(function(content) {
-    return applyRule(content.cssText);
+    return applyRule(tabId, content.cssText);
   }));
   
   return promise;
 }
 
 
-function applyRule(cssText) {
+function applyRule(tabId, cssText) {
   cssText = cssText.replace(/\\/g, '\\\\');
   cssText = cssText.replace(/'/g, '\\\'');
   cssText = cssText.replace(/\n/g, '');
   cssText = cssText.replace(/\r/g, '');
     
-  return executeCode('ccss.applyRules(\'' + cssText + '\', \'external\')');
+  return executeCode(tabId, 'ccss.applyRules(\'' + cssText + '\', \'external\')');
 }
 
 
@@ -74,3 +74,14 @@ function devToolsListener(message, sender, sendResponse) {
   tabId = message.tabId;
   messageHandlers[message.handler](message, sender, sendResponse);
 }
+
+
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-68451209-1']);
+_gaq.push(['_trackPageview']);
+
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = 'https://ssl.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
