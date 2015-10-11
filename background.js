@@ -15,6 +15,7 @@ function handleConnect(port) {
 
 
 function injectContentScript(message, sender, sendRequest) {
+  chrome.tabs.executeScript(message.tabId, {file: 'ga.js'});
   chrome.tabs.executeScript(message.tabId, {file: 'content_script.js'});
 }   
   
@@ -74,14 +75,3 @@ function devToolsListener(message, sender, sendResponse) {
   tabId = message.tabId;
   messageHandlers[message.handler](message, sender, sendResponse);
 }
-
-
-var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-68451209-1']);
-_gaq.push(['_trackPageview']);
-
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = 'https://ssl.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
