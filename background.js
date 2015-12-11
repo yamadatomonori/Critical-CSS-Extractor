@@ -1,10 +1,10 @@
-var messageHandlers = {};
+  var messageHandlers = {};
 
 
 chrome.runtime.onConnect.addListener(handleConnect);
 
   
-function handleConnect(port) {
+function handleConnect(port, sender) {
   if (port.name == 'devtools-page') {
     messageHandlers.injectContentScript = injectContentScript;
     messageHandlers.executeContentScript = executeContentScript;
@@ -20,8 +20,23 @@ function injectContentScript(message, sender, sendRequest) {
 }   
   
  
-function executeContentScript(message, sender, sendResponse) {
+function executeContentScript(message, sender) {
   var tabId = message.tabId;
+  
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (sender.id == chrome.runtime.id && sender.tab.id == tabId) {
+    
+      var content = message.contents.find(function(content) {
+        return content.url == request.href;
+      });
+      
+      if (content) {
+        sendResponse({cssText: content.cssText});
+      } else {
+        throw Error('Not found in this page: ' + request.href);
+      }
+    }
+  });
   
   chrome.tabs.get(tabId, function(tab) {
     chrome.tabs.create({
@@ -31,8 +46,8 @@ function executeContentScript(message, sender, sendResponse) {
   });
   
   executeCode(tabId, 'var ccss = new AKAM.CCSS();')
-  .then(executeCode.bind(undefined, tabId, 'ccss.getCrossOriginStyleSheets();'))
-  .then(inlineCrossOriginStyleSheets.bind(undefined, tabId, message.contents))
+  //.then(executeCode.bind(undefined, tabId, 'ccss.getCrossOriginStyleSheets();'))
+  //.then(inlineCrossOriginStyleSheets.bind(undefined, tabId, message.contents))
   .then(executeCode.bind(undefined, tabId, 'ccss.extractCriticalRules();'));
 }
 
@@ -71,7 +86,7 @@ function applyRule(tabId, cssText) {
 }
 
 
-function devToolsListener(message, sender, sendResponse) {
+function devToolsListener(message, sender) {
   tabId = message.tabId;
-  messageHandlers[message.handler](message, sender, sendResponse);
+  messageHandlers[message.handler](message, sender);
 }
