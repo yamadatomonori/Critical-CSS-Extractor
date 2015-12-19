@@ -28,12 +28,18 @@ function executeContentScript(message, sender, sendResponse) {
       active: false,
       url: tab.url
     });
+    
+    var resources = message.contents.filter(function(resource) {
+      return ! (new RegExp('^' + tab.url)).test(resource.url);
+    }).reduce(function(prev, resource) {
+      prev[resource.url] = resource.cssText;
+      
+      return prev;
+    }, {});
+    
+    executeCode(tabId, 'var ccss = new AKAM.CCSS(' + JSON.stringify(resources) + ');')
+    .then(executeCode.bind(undefined, tabId, 'ccss.extractCriticalRules();'));
   });
-  
-  executeCode(tabId, 'var ccss = new AKAM.CCSS();')
-  .then(executeCode.bind(undefined, tabId, 'ccss.getCrossOriginStyleSheets();'))
-  .then(inlineCrossOriginStyleSheets.bind(undefined, tabId, message.contents))
-  .then(executeCode.bind(undefined, tabId, 'ccss.extractCriticalRules();'));
 }
 
 
@@ -43,19 +49,6 @@ function executeCode(tabId, code) {
       resolve(results[0]);
     });
   });
-  
-  return promise;
-}
-
-
-function inlineCrossOriginStyleSheets(tabId, contents, crossOriginStyleSheets) {
-  contents = contents.filter(function(content) {
-    return 0 <= crossOriginStyleSheets.indexOf(content.url);
-  });
-  
-  var promise = Promise.all(contents.map(function(content) {
-    return applyRule(tabId, content.cssText);
-  }));
   
   return promise;
 }
