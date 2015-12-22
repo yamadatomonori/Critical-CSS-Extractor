@@ -116,9 +116,7 @@ AKAM.CCSS.prototype.caseRuleKeyframes = function(rule, criticalRules) {
  */
 AKAM.CCSS.prototype.caseRuleMedia = function(rule, criticalRules) {
   if (window.matchMedia(rule.media.mediaText).matches === true) {
-    [].forEach.call(rule.cssRules, function(rule) {
-      criticalRules.push(rule.cssText);
-    });
+    [].forEach.call(rule.cssRules, this.parseCSSRule.bind(this, criticalRules));
   }
 };
 
@@ -182,21 +180,17 @@ AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
     this.applyRules(this.getCssText(styleSheet.href), 'external');
   }
 
-  return [].reduce.call(
-      styleSheet.rules || [], this.parseCSSRule.bind(this, styleSheet.href), criticalRules);
+  [].forEach.call(styleSheet.rules || [], this.parseCSSRule.bind(this, criticalRules));
 };
 
 
 /**
  * @param {Array<string>} criticalRules .
  * @param {CSSStyleRule} rule .
- * @return {Array<string>} .
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.parseCSSRule = function(href, criticalRules, rule) {
+AKAM.CCSS.prototype.parseCSSRule = function(criticalRules, rule) {
   this.switchCssRule[rule.type](rule, criticalRules);
-  
-  return criticalRules;
 };
 
 
