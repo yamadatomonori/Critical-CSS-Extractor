@@ -74,6 +74,7 @@ AKAM.CCSS.prototype.init = function() {
   this.switchCssRule[cssRule.IMPORT_RULE] = this.caseRuleImport.bind(this);
   this.switchCssRule[cssRule.KEYFRAMES_RULE] = this.caseRuleKeyframes.bind(this);
   this.switchCssRule[cssRule.MEDIA_RULE] = this.caseRuleMedia.bind(this);
+  this.switchCssRule[cssRule.SUPPORTS_RULE] = this.caseRuleSupports.bind(this);  
   this.switchCssRule[cssRule.STYLE_RULE] = this.caseRuleStyle.bind(this);  
 };
 
@@ -121,6 +122,18 @@ AKAM.CCSS.prototype.caseRuleMedia = function(rule, criticalRules) {
 };
 
 
+/**
+ * @param {CSSSupportsRule} rule .
+ * @param {Array<string>} criticalRules .
+ * @this {AKAM.CCSS}
+ */
+AKAM.CCSS.prototype.caseRuleSupports = function(rule, criticalRules) {
+  if (CSS.supports(rule.conditionText)) {
+    [].forEach.call(rule.cssRules, this.parseCSSRule.bind(this, criticalRules));
+  }
+};
+ 
+ 
 /**
  * @param {CSSStyleRule} rule .
  * @param {Array<string>} criticalRules .
@@ -190,7 +203,13 @@ AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.parseCSSRule = function(criticalRules, rule) {
-  this.switchCssRule[rule.type](rule, criticalRules);
+  var caseRule = this.switchCssRule[rule.type];
+  
+  if (caseRule) {
+    caseRule(rule, criticalRules);
+  } else {
+    throw Error('unknown type of rule: ' + String(rule.type));
+  }
 };
 
 
