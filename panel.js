@@ -4,13 +4,7 @@ var backgroundPageConnection;
 window.onload = function() {
   document.getElementsByTagName('button')[0].onclick = handleClick;
   
-  document.querySelector('#go-to-options').addEventListener('click', function() {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL('options.html'));
-    }
-  });
+  document.querySelector('#go-to-options').addEventListener('click', handleClickGoToOption);
 
   backgroundPageConnection = chrome.runtime.connect({
     name: 'devtools-page'
@@ -63,52 +57,80 @@ function getContent(resource) {
  * @see https://developer.chrome.com/extensions/devtools_inspectedWindow#type-Resource
  */
 function parseCSSText(contents) {
-  var relativePathes = [];
-  var pattern = 'url\\((?:\\\'|"|)(\\..+?)\\)';
-  
-  contents = contents.map(function(content) {
-    relativePathes = content.cssText.match(new RegExp(pattern, 'g')) || [];
+  sendMessage({
+    handler: 'executeContentScript',
+    contents: contents.map(mapContents)});
+}
+
+
+function mapContents(content) {
+  var relativePathes = content.cssText.match(/url\(.+?\)/g) || [];
     
-    relativePathes.forEach(function(relativePath) {
-      relativePath = relativePath.match(new RegExp(pattern))[1];
+  relativePathes.forEach(function(relativePath) {
+    var patterns = [
+      /url\(([^:]+?)\)/,
+      /url\('([^:]+?)'\)/,
+      /url\("([^:]+?)"\)/
+    ];
+  
+    patterns.some(function(pattern) {
+      var matches = relativePath.match(new RegExp(pattern));
       
-      content.cssText = 
-          content.cssText
-            .split(relativePath)
-            .join(getAbsolutePath(
-                content.url, relativePath));
+      if (matches) {
+        relativePath = matches[1];
+        
+        return true;
+      } else {
+        return false;
+      }
     });
     
-    return content;
+    var replacement = 'url(' + getAbsolutePath(content.url, relativePath) + ')';
+    
+    var cssText = content.cssText;
+    cssText = cssText.replace((new RegExp('url\\(' + relativePath + '\\)')), replacement);
+    cssText = cssText.replace((new RegExp('url\\(\'' + relativePath + '\'\\)')), replacement);
+    cssText = cssText.replace((new RegExp('url\\("' + relativePath + '"\\)')), replacement);
+    content.cssText = cssText;
   });
   
-  sendMessage({handler: 'executeContentScript', contents: contents});
+  return content;
 }
 
 
 function getAbsolutePath(baseUrl, relativePath) {
-  var directoriesAbsolutePath = baseUrl.split('/');
-  var directoriesRelativePath = relativePath.split('/');
+  var directoriesAbsolute = baseUrl.split('/');
+  var directoriesRelative = relativePath.split('/');
   
-  directoriesAbsolutePath.pop();
+  directoriesAbsolute.pop();
   
-  var directory = '';
-  
-  while((directory = directoriesRelativePath.shift())) {
-    if (directory == '.') {
-      continue;
-    } else if (directory == '..') {
-      directoriesAbsolutePath.pop();
+  directoriesAbsolute = directoriesRelative.reduce(function(directoriesAbsolute, directoryRelative) {
+    if (directoryRelative == '.') {
+    } else if (directoryRelative == '..') {
+      directoriesAbsolute.pop();
+    } else if (directoryRelative === '') {
+      directoriesAbsolute.splice(3);
     } else {
-      directoriesAbsolutePath.push(directory);
+      directoriesAbsolute.push(directoryRelative);
     }
-  }
+    
+    return directoriesAbsolute;
+  }, directoriesAbsolute);
   
-  return directoriesAbsolutePath.join('/');
+  return directoriesAbsolute.join('/');
 }
 
 
 function sendMessage(message) {
   message.tabId = chrome.devtools.inspectedWindow.tabId;
   backgroundPageConnection.postMessage(message);
+}
+
+
+function handleClickGoToOption() {
+  if (chrome.runtime.openOptionsPage) {
+    chrome.runtime.openOptionsPage();
+  } else {
+    window.open(chrome.runtime.getURL('options.html'));
+  } 
 }

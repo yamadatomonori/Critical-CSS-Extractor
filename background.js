@@ -29,9 +29,7 @@ function executeContentScript(message, sender, sendResponse) {
       url: tab.url
     });
     
-    var resources = message.contents.filter(function(resource) {
-      return ! (new RegExp('^' + tab.url)).test(resource.url);
-    }).reduce(function(prev, resource) {
+    var resources = message.content.reduce(function(prev, reource) {
       prev[resource.url] = resource.cssText;
       
       return prev;

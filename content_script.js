@@ -16,7 +16,6 @@ AKAM.CCSS = function(resources) {
     return resources[href];
   };
   
-  
   var promiseStorage = new Promise(function(resolve, reject) {
     chrome.storage.sync.get({
       perfRemove: true,
@@ -189,11 +188,11 @@ AKAM.CCSS.prototype.extractCriticalRules = function() {
  */
  
 AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
-  if (styleSheet.cssRules === null && styleSheet.href) {
+  if (styleSheet.href) {
     this.applyRules(this.getCssText(styleSheet.href), 'external');
+  } else {
+    [].forEach.call(styleSheet.rules || [], this.parseCSSRule.bind(this, criticalRules));
   }
-
-  [].forEach.call(styleSheet.rules || [], this.parseCSSRule.bind(this, criticalRules));
 };
 
 
