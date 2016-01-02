@@ -29,7 +29,7 @@ function executeContentScript(message, sender, sendResponse) {
       url: tab.url
     });
     
-    var resources = message.content.reduce(function(prev, reource) {
+    var resources = message.contents.reduce(function(prev, resource) {
       prev[resource.url] = resource.cssText;
       
       return prev;

@@ -1,27 +1,42 @@
-var backgroundPageConnection;
+
+/**
+ * @constructor
+ */
+var Panel = function() {
+  window.addEventListener('load', this.handleLoadWindow.bind(this), false);
+};
 
 
-window.onload = function() {
-  document.getElementsByTagName('button')[0].onclick = handleClick;
-  
-  document.querySelector('#go-to-options').addEventListener('click', handleClickGoToOption);
+/**
+ * @this {Panel}
+ */
+Panel.prototype.handleLoadWindow = function() {
+  document.getElementsByTagName('button')[0].addEventListener('click', this.handleClickButton.bind(this));
+  document.getElementById('go-to-options').addEventListener('click', this.handleClickGoToOption.bind(this));
 
-  backgroundPageConnection = chrome.runtime.connect({
+  this.backgroundPageConnection = chrome.runtime.connect({
     name: 'devtools-page'
   });
   
-  sendMessage({handler: 'injectContentScript'});
+  this.sendMessage({handler: 'injectContentScript'});
+};
+
+
+/**
+ * @this {Panel}
+ */
+Panel.prototype.handleClickButton = function() {
+  this.getResources()
+  .then(this.getContents.bind(this))
+  .then(this.parseCSSText.bind(this));
 };
 
  
-function handleClick() {
-  getResources()
-  .then(getContents)
-  .then(parseCSSText);
-}
-
-
-function getResources() {
+/**
+ * @return {Promise} .
+ * @this {Panel}
+ */
+Panel.prototype.getResources = function() {
   var promise = new Promise(function(resolve, reject) {
     chrome.devtools.inspectedWindow.getResources(function(resources) {
       resolve(resources);
@@ -29,19 +44,30 @@ function getResources() {
   });
   
   return promise;
-}
+};
 
 
-function getContents(resources) {
+/**
+ * @param {Array} resources .
+ * @return {Promise} .
+ * @this {Panel}
+ */
+Panel.prototype.getContents = function(resources) {
   resources = resources.filter(function(resource) {
     return resource.type == 'stylesheet';
   });
     
-  return Promise.all(resources.map(getContent));
-}
+  return Promise.all(resources.map(this.getContent));
+};
 
 
-function getContent(resource) {
+/**
+ * @param {Resource} resource .
+ * @return {Promise} .
+ * @see https://developer.chrome.com/extensions/devtools_inspectedWindow#type-Resource
+ * @this {Panel}
+ */
+Panel.prototype.getContent = function(resource) {
   var promise = new Promise(function(resolve, reject) {
     resource.getContent(function(content) {
       resolve({cssText: content, url: resource.url});
@@ -49,56 +75,99 @@ function getContent(resource) {
   });
   
   return promise;
-}
+};
 
 
 /**
  * @param {Array<content>} contents .
  * @see https://developer.chrome.com/extensions/devtools_inspectedWindow#type-Resource
+ * @this {Panel}
  */
-function parseCSSText(contents) {
-  sendMessage({
+Panel.prototype.parseCSSText = function(contents) {
+  this.sendMessage({
     handler: 'executeContentScript',
-    contents: contents.map(mapContents)});
-}
+    contents: contents.map(this.mapContents, this)});
+};
 
 
-function mapContents(content) {
-  var relativePathes = content.cssText.match(/url\(.+?\)/g) || [];
+/**
+ * @param {Object} message .
+ * @this {Panel}
+ */
+Panel.prototype.sendMessage = function(message) {
+  message.tabId = chrome.devtools.inspectedWindow.tabId;
+  this.backgroundPageConnection.postMessage(message);
+};
+
+
+/**
+ * @param {content} content .
+ * @see https://developer.chrome.com/extensions/devtools_inspectedWindow#type-Resource
+ * @this {Panel}
+ */
+Panel.prototype.mapContents = function(content) {
+  var urls = content.cssText.match(/url\(.+?\)/g) || [];
     
-  relativePathes.forEach(function(relativePath) {
-    var patterns = [
-      /url\(([^:]+?)\)/,
-      /url\('([^:]+?)'\)/,
-      /url\("([^:]+?)"\)/
-    ];
+  return urls.reduce(this.reduceUrls.bind(this), content);
+};
+
+
+/**
+ * @param {string} url .
+ * @this {Panel} .
+ */
+Panel.prototype.reduceUrls = function(content, url) {
+  var patterns = [
+    /url\(([^:]+?)\)/,
+    /url\('([^:]+?)'\)/,
+    /url\("([^:]+?)"\)/
+  ];
+
+  this.matches = [];
   
-    patterns.some(function(pattern) {
-      var matches = relativePath.match(new RegExp(pattern));
-      
-      if (matches) {
-        relativePath = matches[1];
-        
-        return true;
-      } else {
-        return false;
-      }
-    });
-    
-    var replacement = 'url(' + getAbsolutePath(content.url, relativePath) + ')';
-    
+  patterns.some(this.somePatterns.bind(this, url));
+  
+  if (2 <= this.matches.length) {
     var cssText = content.cssText;
-    cssText = cssText.replace((new RegExp('url\\(' + relativePath + '\\)')), replacement);
-    cssText = cssText.replace((new RegExp('url\\(\'' + relativePath + '\'\\)')), replacement);
-    cssText = cssText.replace((new RegExp('url\\("' + relativePath + '"\\)')), replacement);
+    
+    cssText =
+        cssText
+          .split(this.matches[0])
+          .join('url(' + this.getAbsolutePath(content.url, this.matches[1]) + ')');
+    
     content.cssText = cssText;
-  });
+  }
   
   return content;
-}
-
-
-function getAbsolutePath(baseUrl, relativePath) {
+};
+  
+  
+/*
+ * @param {string} url .
+ * @param {RegExp} pattern .
+ * @return {boolean} .
+ * @this {Panel}
+ */
+Panel.prototype.somePatterns = function(url, pattern) {
+  var matches = url.match(pattern);
+  
+  if (matches) {
+    this.matches = matches;
+    
+    return true;
+  } else {
+    return false;
+  }
+};
+    
+    
+/**
+ * @param {string} baseUrl .
+ * @param {string} relativePath .
+ * @return {string} .
+ * @this {Panel}
+ */
+Panel.prototype.getAbsolutePath = function(baseUrl, relativePath) {
   var directoriesAbsolute = baseUrl.split('/');
   var directoriesRelative = relativePath.split('/');
   
@@ -118,19 +187,19 @@ function getAbsolutePath(baseUrl, relativePath) {
   }, directoriesAbsolute);
   
   return directoriesAbsolute.join('/');
-}
+};
 
 
-function sendMessage(message) {
-  message.tabId = chrome.devtools.inspectedWindow.tabId;
-  backgroundPageConnection.postMessage(message);
-}
-
-
-function handleClickGoToOption() {
+/**
+ * @this {Panel}
+ */
+Panel.prototype.handleClickGoToOption = function() {
   if (chrome.runtime.openOptionsPage) {
     chrome.runtime.openOptionsPage();
   } else {
     window.open(chrome.runtime.getURL('options.html'));
   } 
-}
+};
+
+
+new Panel();
