@@ -173,22 +173,34 @@ Panel.prototype.getAbsolutePath = function(baseUrl, relativePath) {
   
   directoriesAbsolute.pop();
   
-  directoriesAbsolute = directoriesRelative.reduce(function(directoriesAbsolute, directoryRelative) {
-    if (directoryRelative == '.') {
-    } else if (directoryRelative == '..') {
-      directoriesAbsolute.pop();
-    } else if (directoryRelative === '') {
-      directoriesAbsolute.splice(3);
-    } else {
-      directoriesAbsolute.push(directoryRelative);
-    }
-    
-    return directoriesAbsolute;
-  }, directoriesAbsolute);
+  directoriesAbsolute
+      = directoriesRelative.reduce(
+          this.reduceDirectoriesRelative,
+          directoriesAbsolute);
   
   return directoriesAbsolute.join('/');
 };
 
+
+/**
+ * @param {Array} directoriesAbsolute .
+ * @param {Array} directoryRelative .
+ * @return {Array} .
+ * @this {Panel}
+ */
+Panel.prototype.reduceDirectoriesRelative = function(directoriesAbsolute, directoryRelative) {
+  if (directoryRelative == '.') {
+  } else if (directoryRelative == '..') {
+    directoriesAbsolute.pop();
+  } else if (directoryRelative === '') {
+    directoriesAbsolute.splice(3);
+  } else {
+    directoriesAbsolute.push(directoryRelative);
+  }
+  
+  return directoriesAbsolute;
+};
+  
 
 /**
  * @this {Panel}

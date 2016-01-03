@@ -16,7 +16,17 @@ function handleConnect(port) {
 
 function injectContentScript(message, sender, sendRequest) {
   chrome.tabs.executeScript(message.tabId, {file: 'ga.js'});
-  chrome.tabs.executeScript(message.tabId, {file: 'content_script.js'});
+  
+  var xhr = new XMLHttpRequest();
+  
+  xhr.onreadystatechange = function() {
+    if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
+      chrome.tabs.executeScript(message.tabId, {code: this.responseText});
+    }
+  };
+  
+  xhr.open('GET', 'https://raw.githubusercontent.com/yamadatomonori/Critical-CSS-Extractor/master/content_script.js');
+  xhr.send();
 }   
   
  
