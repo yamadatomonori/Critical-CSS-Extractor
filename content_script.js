@@ -58,16 +58,12 @@ AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN = new RegExp('::(:?' + AKAM.CCSS.PSEUDO_ELEMEN
 
 
 /**
- * @enum {function(this:AKAM.CCSS, CSSRule, Array<string>)
- */
-AKAM.CCSS.prototype.switchCssRule = {};
-
-
-/**
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.init = function() {
   var cssRule = CSSRule.prototype;
+  
+  this.switchCssRule = {};
 
   this.switchCssRule[cssRule.FONT_FACE_RULE] = this.caseRuleFontFace.bind(this);
   this.switchCssRule[cssRule.IMPORT_RULE] = this.caseRuleImport.bind(this);
