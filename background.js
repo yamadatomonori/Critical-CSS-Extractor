@@ -3,12 +3,12 @@ var messageHandlers = {};
 
 chrome.runtime.onConnect.addListener(handleConnect);
 
-  
+
 function handleConnect(port) {
   if (port.name == 'devtools-page') {
     messageHandlers.injectContentScript = injectContentScript;
     messageHandlers.executeContentScript = executeContentScript;
-    
+
     port.onMessage.addListener(devToolsListener);
   }
 }
@@ -16,35 +16,35 @@ function handleConnect(port) {
 
 function injectContentScript(message, sender, sendRequest) {
   chrome.tabs.executeScript(message.tabId, {file: 'ga.js'});
-  
+
   var xhr = new XMLHttpRequest();
-  
+
   xhr.onreadystatechange = function() {
     if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {
       chrome.tabs.executeScript(message.tabId, {code: this.responseText});
     }
   };
-  
-  xhr.open('GET', 'https://raw.githubusercontent.com/yamadatomonori/Critical-CSS-Extractor/master/content_script.js');
+
+  xhr.open('GET', 'https://raw.githubusercontent.com/yamadatomonori/Critical-CSS-Extractor/develop/content_script.js');
   xhr.send();
-}   
-  
- 
+}
+
+
 function executeContentScript(message, sender, sendResponse) {
   var tabId = message.tabId;
-  
+
   chrome.tabs.get(tabId, function(tab) {
     chrome.tabs.create({
       active: false,
       url: tab.url
     });
-    
+
     var resources = message.contents.reduce(function(prev, resource) {
       prev[resource.url] = resource.cssText;
-      
+
       return prev;
     }, {});
-    
+
     executeCode(tabId, 'var ccss = new AKAM.CCSS(' + JSON.stringify(resources) + ');')
     .then(executeCode.bind(undefined, tabId, 'ccss.extractCriticalRules();'));
   });
@@ -57,7 +57,7 @@ function executeCode(tabId, code) {
       resolve(results[0]);
     });
   });
-  
+
   return promise;
 }
 
@@ -67,7 +67,7 @@ function applyRule(tabId, cssText) {
   cssText = cssText.replace(/'/g, '\\\'');
   cssText = cssText.replace(/\n/g, '');
   cssText = cssText.replace(/\r/g, '');
-    
+
   return executeCode(tabId, 'ccss.applyRules(\'' + cssText + '\', \'external\')');
 }
 

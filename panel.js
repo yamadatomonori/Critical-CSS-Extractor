@@ -17,7 +17,7 @@ Panel.prototype.handleLoadWindow = function() {
   this.backgroundPageConnection = chrome.runtime.connect({
     name: 'devtools-page'
   });
-  
+
   this.sendMessage({handler: 'injectContentScript'});
 };
 
@@ -31,7 +31,7 @@ Panel.prototype.handleClickButton = function() {
   .then(this.parseCSSText.bind(this));
 };
 
- 
+
 /**
  * @return {Promise} .
  * @this {Panel}
@@ -42,7 +42,7 @@ Panel.prototype.getResources = function() {
       resolve(resources);
     });
   });
-  
+
   return promise;
 };
 
@@ -56,7 +56,7 @@ Panel.prototype.getContents = function(resources) {
   resources = resources.filter(function(resource) {
     return resource.type == 'stylesheet';
   });
-    
+
   return Promise.all(resources.map(this.getContent));
 };
 
@@ -73,7 +73,7 @@ Panel.prototype.getContent = function(resource) {
       resolve({cssText: content, url: resource.url});
     });
   });
-  
+
   return promise;
 };
 
@@ -107,7 +107,7 @@ Panel.prototype.sendMessage = function(message) {
  */
 Panel.prototype.mapContents = function(content) {
   var urls = content.cssText.match(/url\(.+?\)/g) || [];
-    
+
   return urls.reduce(this.reduceUrls.bind(this), content);
 };
 
@@ -124,24 +124,24 @@ Panel.prototype.reduceUrls = function(content, url) {
   ];
 
   this.matches = [];
-  
+
   patterns.some(this.somePatterns.bind(this, url));
-  
+
   if (2 <= this.matches.length) {
     var cssText = content.cssText;
-    
+
     cssText =
         cssText
           .split(this.matches[0])
           .join('url(' + this.getAbsolutePath(content.url, this.matches[1]) + ')');
-    
+
     content.cssText = cssText;
   }
-  
+
   return content;
 };
-  
-  
+
+
 /*
  * @param {string} url .
  * @param {RegExp} pattern .
@@ -150,17 +150,17 @@ Panel.prototype.reduceUrls = function(content, url) {
  */
 Panel.prototype.somePatterns = function(url, pattern) {
   var matches = url.match(pattern);
-  
+
   if (matches) {
     this.matches = matches;
-    
+
     return true;
   } else {
     return false;
   }
 };
-    
-    
+
+
 /**
  * @param {string} baseUrl .
  * @param {string} relativePath .
@@ -170,14 +170,14 @@ Panel.prototype.somePatterns = function(url, pattern) {
 Panel.prototype.getAbsolutePath = function(baseUrl, relativePath) {
   var directoriesAbsolute = baseUrl.split('/');
   var directoriesRelative = relativePath.split('/');
-  
+
   directoriesAbsolute.pop();
-  
-  directoriesAbsolute
-      = directoriesRelative.reduce(
+
+  directoriesAbsolute =
+      directoriesRelative.reduce(
           this.reduceDirectoriesRelative,
           directoriesAbsolute);
-  
+
   return directoriesAbsolute.join('/');
 };
 
@@ -197,10 +197,10 @@ Panel.prototype.reduceDirectoriesRelative = function(directoriesAbsolute, direct
   } else {
     directoriesAbsolute.push(directoryRelative);
   }
-  
+
   return directoriesAbsolute;
 };
-  
+
 
 /**
  * @this {Panel}
@@ -210,7 +210,7 @@ Panel.prototype.handleClickGoToOption = function() {
     chrome.runtime.openOptionsPage();
   } else {
     window.open(chrome.runtime.getURL('options.html'));
-  } 
+  }
 };
 
 
