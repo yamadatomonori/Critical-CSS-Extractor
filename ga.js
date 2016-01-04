@@ -1,6 +1,6 @@
 var script = document.createElement('script');
-script.async = 1;
-script.src = 'https://www.google-analytics.com/analytics.js';
+script.setAttribute('async', '1');
+script.setAttribute('src', 'https://www.google-analytics.com/analytics.js')
 
 var firstScript = document.getElementsByTagName('script')[0];
 firstScript.parentNode.insertBefore(script, firstScript);

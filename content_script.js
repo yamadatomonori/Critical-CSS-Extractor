@@ -62,7 +62,7 @@ AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN = new RegExp('::(:?' + AKAM.CCSS.PSEUDO_ELEMEN
  */
 AKAM.CCSS.prototype.init = function() {
   var cssRule = CSSRule.prototype;
-  
+
   this.switchCssRule = {};
 
   this.switchCssRule[cssRule.FONT_FACE_RULE] = this.caseRuleFontFace.bind(this);
@@ -310,7 +310,7 @@ AKAM.CCSS.prototype.removeCurrentStyles = function() {
 
 
 /**
- * @param {string} criticalRules .
+ * @param {string} rules .
  * @param {string} type .
  * @this {AKAM.CCSS}
  */
