@@ -11,8 +11,11 @@ var Panel = function() {
  * @this {Panel}
  */
 Panel.prototype.handleLoadWindow = function() {
-  document.getElementsByTagName('button')[0].addEventListener('click', this.handleClickButton.bind(this));
-  document.getElementById('go-to-options').addEventListener('click', this.handleClickGoToOption.bind(this));
+  document.getElementsByTagName('button')[0].addEventListener(
+      'click', this.handleClickButton.bind(this));
+
+  document.getElementById('go-to-options').addEventListener(
+    'click', this.handleClickGoToOption.bind(this));
 
   this.backgroundPageConnection = chrome.runtime.connect({
     name: 'devtools-page'
@@ -102,6 +105,7 @@ Panel.prototype.sendMessage = function(message) {
 
 /**
  * @param {content} content .
+ * @return {content} .
  * @see https://developer.chrome.com/extensions/devtools_inspectedWindow#type-Resource
  * @this {Panel}
  */
@@ -113,7 +117,9 @@ Panel.prototype.mapContents = function(content) {
 
 
 /**
+ * @param {content} content .
  * @param {string} url .
+ * @return {content} .
  * @this {Panel} .
  */
 Panel.prototype.reduceUrls = function(content, url) {
@@ -133,7 +139,8 @@ Panel.prototype.reduceUrls = function(content, url) {
     cssText =
         cssText
           .split(this.matches[0])
-          .join('url(' + this.getAbsolutePath(content.url, this.matches[1]) + ')');
+          .join('url(' + this.getAbsolutePath(
+              content.url, this.matches[1]) + ')');
 
     content.cssText = cssText;
   }
@@ -142,7 +149,7 @@ Panel.prototype.reduceUrls = function(content, url) {
 };
 
 
-/*
+/**
  * @param {string} url .
  * @param {RegExp} pattern .
  * @return {boolean} .
@@ -183,22 +190,22 @@ Panel.prototype.getAbsolutePath = function(baseUrl, relativePath) {
 
 
 /**
- * @param {Array} directoriesAbsolute .
- * @param {Array} directoryRelative .
+ * @param {Array} absolute .
+ * @param {Array} relative .
  * @return {Array} .
  * @this {Panel}
  */
-Panel.prototype.reduceDirectoriesRelative = function(directoriesAbsolute, directoryRelative) {
-  if (directoryRelative == '.') {
-  } else if (directoryRelative == '..') {
-    directoriesAbsolute.pop();
-  } else if (directoryRelative === '') {
-    directoriesAbsolute.splice(3);
+Panel.prototype.reduceDirectoriesRelative = function(absolute, relative) {
+  if (relative == '.') {
+  } else if (relative == '..') {
+    absolute.pop();
+  } else if (relative === '') {
+    absolute.splice(3);
   } else {
-    directoriesAbsolute.push(directoryRelative);
+    absolute.push(relative);
   }
 
-  return directoriesAbsolute;
+  return absolute;
 };
 
 

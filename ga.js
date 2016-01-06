@@ -1,6 +1,6 @@
 var script = document.createElement('script');
 script.setAttribute('async', '1');
-script.setAttribute('src', 'https://www.google-analytics.com/analytics.js')
+script.setAttribute('src', 'https://www.google-analytics.com/analytics.js');
 
 var firstScript = document.getElementsByTagName('script')[0];
 firstScript.parentNode.insertBefore(script, firstScript);
@@ -28,7 +28,9 @@ if (location.protocol == 'chrome-extension:') {
   executeGAMethods();
 } else {
   var script = document.createElement('script');
-  script.appendChild(document.createTextNode(executeGAMethods.toString() + '\n' + executeGAMethods.name + '();'));
+  script.appendChild(
+      document.createTextNode(
+          executeGAMethods.toString() + '\n' + executeGAMethods.name + '();'));
 
   var firstScript = document.getElementsByTagName('script')[0];
   firstScript.parentNode.insertBefore(script, firstScript);

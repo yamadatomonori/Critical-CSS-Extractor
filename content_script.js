@@ -54,7 +54,8 @@ AKAM.CCSS.PSEUDO_ELEMENTS = [
 /**
  * @const {RegEx}
  */
-AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN = new RegExp('::(:?' + AKAM.CCSS.PSEUDO_ELEMENTS.join('|') + ')$');
+AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN =
+    new RegExp('::(:?' + AKAM.CCSS.PSEUDO_ELEMENTS.join('|') + ')$');
 
 
 /**
@@ -63,14 +64,16 @@ AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN = new RegExp('::(:?' + AKAM.CCSS.PSEUDO_ELEMEN
 AKAM.CCSS.prototype.init = function() {
   var cssRule = CSSRule.prototype;
 
-  this.switchCssRule = {};
+  var switchCssRule = {};
 
-  this.switchCssRule[cssRule.FONT_FACE_RULE] = this.caseRuleFontFace.bind(this);
-  this.switchCssRule[cssRule.IMPORT_RULE] = this.caseRuleImport.bind(this);
-  this.switchCssRule[cssRule.KEYFRAMES_RULE] = this.caseRuleKeyframes.bind(this);
-  this.switchCssRule[cssRule.MEDIA_RULE] = this.caseRuleMedia.bind(this);
-  this.switchCssRule[cssRule.SUPPORTS_RULE] = this.caseRuleSupports.bind(this);
-  this.switchCssRule[cssRule.STYLE_RULE] = this.caseRuleStyle.bind(this);
+  switchCssRule[cssRule.FONT_FACE_RULE] = this.caseRuleFontFace.bind(this);
+  switchCssRule[cssRule.IMPORT_RULE] = this.caseRuleImport.bind(this);
+  switchCssRule[cssRule.KEYFRAMES_RULE] = this.caseRuleKeyframes.bind(this);
+  switchCssRule[cssRule.MEDIA_RULE] = this.caseRuleMedia.bind(this);
+  switchCssRule[cssRule.SUPPORTS_RULE] = this.caseRuleSupports.bind(this);
+  switchCssRule[cssRule.STYLE_RULE] = this.caseRuleStyle.bind(this);
+
+  this.switchCssRule = switchCssRule;
 };
 
 
@@ -187,7 +190,9 @@ AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
   if (styleSheet.href) {
     this.applyRules(this.getCssText(styleSheet.href), 'external');
   } else {
-    [].forEach.call(styleSheet.rules || [], this.parseCSSRule.bind(this, criticalRules));
+    var rules = styleSheet.rules || [];
+
+    [].forEach.call(rules, this.parseCSSRule.bind(this, criticalRules));
   }
 };
 
@@ -263,7 +268,8 @@ AKAM.CCSS.prototype.removePseudoElements = function(selectorText) {
  * @param {string} selectorText .
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll = function(er, selectorText) {
+AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll =
+    function(er, selectorText) {
   switch (er.constructor) {
     case DOMException:
       if (er.code == DOMException.prototype.SYNTAX_ERR) {

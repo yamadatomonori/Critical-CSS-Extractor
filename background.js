@@ -25,7 +25,9 @@ function injectContentScript(message, sender, sendRequest) {
     }
   };
 
-  xhr.open('GET', 'https://raw.githubusercontent.com/yamadatomonori/Critical-CSS-Extractor/develop/content_script.js');
+  xhr.open(
+      'GET',
+      'https://raw.githubusercontent.com/yamadatomonori/Critical-CSS-Extractor/develop/content_script.js');
   xhr.send();
 }
 
@@ -45,7 +47,8 @@ function executeContentScript(message, sender, sendResponse) {
       return prev;
     }, {});
 
-    executeCode(tabId, 'var ccss = new AKAM.CCSS(' + JSON.stringify(resources) + ');')
+    executeCode(
+        tabId, 'var ccss = new AKAM.CCSS(' + JSON.stringify(resources) + ');')
     .then(executeCode.bind(undefined, tabId, 'ccss.extractCriticalRules();'));
   });
 }
@@ -68,7 +71,8 @@ function applyRule(tabId, cssText) {
   cssText = cssText.replace(/\n/g, '');
   cssText = cssText.replace(/\r/g, '');
 
-  return executeCode(tabId, 'ccss.applyRules(\'' + cssText + '\', \'external\')');
+  return executeCode(
+      tabId, 'ccss.applyRules(\'' + cssText + '\', \'external\')');
 }
 
 
