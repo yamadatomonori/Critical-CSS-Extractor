@@ -6,7 +6,7 @@ var AKAM = AKAM || {};
  * @param {Array} resources .
  */
 AKAM.CCSS = function(resources) {
-          
+
   /**
    * @param {string} href .
    * @return {string} .
@@ -15,7 +15,7 @@ AKAM.CCSS = function(resources) {
   this.getCssText = function(href) {
     return resources[href];
   };
-  
+
   var promiseStorage = new Promise(function(resolve, reject) {
     chrome.storage.sync.get({
       perfRemove: true,
@@ -24,16 +24,16 @@ AKAM.CCSS = function(resources) {
       resolve(items);
     });
   });
-  
-  
+
+
   /**
    * @return {Promise} .
    */
   this.getPromiseStorage = function() {
     return promiseStorage;
   };
-  
-  
+
+
   this.init.call(this);
 };
 
@@ -41,7 +41,7 @@ AKAM.CCSS = function(resources) {
 /**
  * @const {Array<string>}
  */
-AKAM.CCSS.prototype.PSEUDO_ELEMENTS = [
+AKAM.CCSS.PSEUDO_ELEMENTS = [
   'after',
   'before',
   'first-letter',
@@ -54,13 +54,8 @@ AKAM.CCSS.prototype.PSEUDO_ELEMENTS = [
 /**
  * @const {RegEx}
  */
-AKAM.CCSS.prototype.PSEUDO_ELEMENTS_PATTERN = new RegExp('::(:?' + AKAM.CCSS.prototype.PSEUDO_ELEMENTS.join('|') + ')$');
-
-
-/**
- * @enum {function(this:AKAM.CCSS, CSSRule, Array<string>)
- */
-AKAM.CCSS.prototype.switchCssRule = {};
+AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN =
+    new RegExp('::(:?' + AKAM.CCSS.PSEUDO_ELEMENTS.join('|') + ')$');
 
 
 /**
@@ -68,13 +63,17 @@ AKAM.CCSS.prototype.switchCssRule = {};
  */
 AKAM.CCSS.prototype.init = function() {
   var cssRule = CSSRule.prototype;
-  
-  this.switchCssRule[cssRule.FONT_FACE_RULE] = this.caseRuleFontFace.bind(this);
-  this.switchCssRule[cssRule.IMPORT_RULE] = this.caseRuleImport.bind(this);
-  this.switchCssRule[cssRule.KEYFRAMES_RULE] = this.caseRuleKeyframes.bind(this);
-  this.switchCssRule[cssRule.MEDIA_RULE] = this.caseRuleMedia.bind(this);
-  this.switchCssRule[cssRule.SUPPORTS_RULE] = this.caseRuleSupports.bind(this);  
-  this.switchCssRule[cssRule.STYLE_RULE] = this.caseRuleStyle.bind(this);  
+
+  var switchCssRule = {};
+
+  switchCssRule[cssRule.FONT_FACE_RULE] = this.caseRuleFontFace.bind(this);
+  switchCssRule[cssRule.IMPORT_RULE] = this.caseRuleImport.bind(this);
+  switchCssRule[cssRule.KEYFRAMES_RULE] = this.caseRuleKeyframes.bind(this);
+  switchCssRule[cssRule.MEDIA_RULE] = this.caseRuleMedia.bind(this);
+  switchCssRule[cssRule.SUPPORTS_RULE] = this.caseRuleSupports.bind(this);
+  switchCssRule[cssRule.STYLE_RULE] = this.caseRuleStyle.bind(this);
+
+  this.switchCssRule = switchCssRule;
 };
 
 
@@ -131,8 +130,8 @@ AKAM.CCSS.prototype.caseRuleSupports = function(rule, criticalRules) {
     [].forEach.call(rule.cssRules, this.parseCSSRule.bind(this, criticalRules));
   }
 };
- 
- 
+
+
 /**
  * @param {CSSStyleRule} rule .
  * @param {Array<string>} criticalRules .
@@ -140,11 +139,11 @@ AKAM.CCSS.prototype.caseRuleSupports = function(rule, criticalRules) {
  */
 AKAM.CCSS.prototype.caseRuleStyle = function(rule, criticalRules) {
   var elements = this.querySelectorAll(rule.selectorText);
-        
+
   var isInViewport = [].some.call(elements, function(element) {
     return this.isInViewport(element.getBoundingClientRect());
   }, this);
-  
+
   if (isInViewport) {
     criticalRules.push(rule.cssText);
   }
@@ -161,20 +160,20 @@ AKAM.CCSS.prototype.extractCriticalRules = function() {
   for (var i = 0; i < document.styleSheets.length; i++) {
     styleSheet = document.styleSheets[i];
     this.currentReferenceElement = styleSheet.ownerNode.nextSibling;
-    
+
     this.parseStyleSheet(criticalRules, styleSheet);
   }
 
-  this.downloadCriticalRules(criticalRules); 
-  
+  this.downloadCriticalRules(criticalRules.join(' '));
+
   //chrome.runtime.sendMessage({cssRule: criticalRules});
-  
+
   this.getPromiseStorage().then(function(items) {
     if (items.perfRemove) {
       this.removeCurrentStyles();
-      
+
       this.applyRules(criticalRules.join(' '), 'critical');
-  
+
       document.title = 'Extracted: ' + document.title;
     }
   }.bind(this));
@@ -186,12 +185,14 @@ AKAM.CCSS.prototype.extractCriticalRules = function() {
  * @param {CSSStyleSheet} styleSheet
  * @this {AKAM.CCSS}
  */
- 
+
 AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
   if (styleSheet.href) {
     this.applyRules(this.getCssText(styleSheet.href), 'external');
   } else {
-    [].forEach.call(styleSheet.rules || [], this.parseCSSRule.bind(this, criticalRules));
+    var rules = styleSheet.rules || [];
+
+    [].forEach.call(rules, this.parseCSSRule.bind(this, criticalRules));
   }
 };
 
@@ -203,7 +204,7 @@ AKAM.CCSS.prototype.parseStyleSheet = function(criticalRules, styleSheet) {
  */
 AKAM.CCSS.prototype.parseCSSRule = function(criticalRules, rule) {
   var caseRule = this.switchCssRule[rule.type];
-  
+
   if (caseRule) {
     caseRule(rule, criticalRules);
   } else {
@@ -232,23 +233,23 @@ AKAM.CCSS.prototype.querySelectorAll = function(selectorTextUnion) {
  */
 AKAM.CCSS.prototype.mapSelectorTextNodes = function(selectorText) {
   selectorText = this.removePseudoElements(selectorText);
-  
+
   var nodeList;
-  
+
   try {
     nodeList = document.querySelectorAll(selectorText);
   } catch (er) {
     this.catchErrorDocumentQuerySelectorAll(er, selectorText);
   }
-  
+
   var nodes = [];
-  
+
   if (nodeList instanceof NodeList) {
     nodes = [].map.call(nodeList, function(node) {
       return node;
     });
   }
-  
+
   return nodes;
 };
 
@@ -258,7 +259,7 @@ AKAM.CCSS.prototype.mapSelectorTextNodes = function(selectorText) {
  * @return {string} .
  */
 AKAM.CCSS.prototype.removePseudoElements = function(selectorText) {
-  return selectorText.replace(this.PSEUDO_ELEMENTS_PATTERN, '');
+  return selectorText.replace(this.constructor.PSEUDO_ELEMENTS_PATTERN, '');
 };
 
 
@@ -267,7 +268,8 @@ AKAM.CCSS.prototype.removePseudoElements = function(selectorText) {
  * @param {string} selectorText .
  * @this {AKAM.CCSS}
  */
-AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll = function(er, selectorText) {
+AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll =
+    function(er, selectorText) {
   switch (er.constructor) {
     case DOMException:
       if (er.code == DOMException.prototype.SYNTAX_ERR) {
@@ -275,14 +277,14 @@ AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll = function(er, selectorTe
       } else {
         throw er;
       }
-      
+
       break;
     default:
       throw er;
   }
 };
- 
- 
+
+
 /**
  * @param {ClientRect} rect .
  * @return {boolean} .
@@ -314,7 +316,7 @@ AKAM.CCSS.prototype.removeCurrentStyles = function() {
 
 
 /**
- * @param {string} criticalRules .
+ * @param {string} rules .
  * @param {string} type .
  * @this {AKAM.CCSS}
  */
@@ -324,7 +326,7 @@ AKAM.CCSS.prototype.applyRules = function(rules, type) {
   style.dataset[type] = 'true';
 
   var referenceElement = this.currentReferenceElement;
-  
+
   if (referenceElement) {
     referenceElement.parentNode.insertBefore(style, referenceElement);
   } else {
@@ -338,7 +340,7 @@ AKAM.CCSS.prototype.applyRules = function(rules, type) {
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.downloadCriticalRules = function(criticalRules) {
-  var a = document.createElement("a");
+  var a = document.createElement('a');
   var file = new Blob([criticalRules], {type: 'text/css'});
   a.href = URL.createObjectURL(file);
   a.download = 'critical_' + document.title + '.css';
