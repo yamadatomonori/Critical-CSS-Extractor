@@ -164,7 +164,7 @@ AKAM.CCSS.prototype.extractCriticalRules = function() {
     this.parseStyleSheet(criticalRules, styleSheet);
   }
 
-  this.downloadCriticalRules(criticalRules);
+  this.downloadCriticalRules(criticalRules.join(' '));
 
   //chrome.runtime.sendMessage({cssRule: criticalRules});
 

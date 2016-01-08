@@ -27,7 +27,7 @@ function injectContentScript(message, sender, sendRequest) {
 
   xhr.open(
       'GET',
-      'https://preview.c9users.io/yamadatomonori/critical-css-extractor/extension/content_script.js');
+      'https://raw.githubusercontent.com/yamadatomonori/Critical-CSS-Extractor/develop/content_script.js');
   xhr.send();
 }
 
