@@ -124,9 +124,9 @@ Panel.prototype.mapContents = function(content) {
  */
 Panel.prototype.reduceUrls = function(content, url) {
   var patterns = [
-    /url\(([^:]+?)\)/,
     /url\('([^:]+?)'\)/,
-    /url\("([^:]+?)"\)/
+    /url\("([^:]+?)"\)/,
+    /url\(([^:]+?)\)/
   ];
 
   this.matches = [];
