@@ -3,7 +3,7 @@
     "page": "background.html",
     "persistent": true
   },
-  "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
+  "content_security_policy": "script-src 'self' https://www.google-analytics.com https://preview.c9users.io https://preview.c9users.io; object-src 'self';",
   "description": "extract Critical CSS rules for the current page",
   "devtools_page": "devtools.html",
   "manifest_version": 2,
