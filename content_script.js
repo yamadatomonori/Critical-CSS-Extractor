@@ -62,7 +62,7 @@ AKAM.CCSS.PSEUDO_ELEMENTS_PATTERN =
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.init = function() {
-  var cssRule = CSSRule.prototype;
+  var cssRule = window.CSSRule.prototype;
 
   var switchCssRule = {};
 
@@ -126,7 +126,7 @@ AKAM.CCSS.prototype.caseRuleMedia = function(rule, criticalRules) {
  * @this {AKAM.CCSS}
  */
 AKAM.CCSS.prototype.caseRuleSupports = function(rule, criticalRules) {
-  if (CSS.supports(rule.conditionText)) {
+  if (window.CSS.supports(rule.conditionText)) {
     [].forEach.call(rule.cssRules, this.parseCSSRule.bind(this, criticalRules));
   }
 };
@@ -244,7 +244,7 @@ AKAM.CCSS.prototype.mapSelectorTextNodes = function(selectorText) {
 
   var nodes = [];
 
-  if (nodeList instanceof NodeList) {
+  if (nodeList instanceof window.NodeList) {
     nodes = [].map.call(nodeList, function(node) {
       return node;
     });
@@ -271,8 +271,8 @@ AKAM.CCSS.prototype.removePseudoElements = function(selectorText) {
 AKAM.CCSS.prototype.catchErrorDocumentQuerySelectorAll =
     function(er, selectorText) {
   switch (er.constructor) {
-    case DOMException:
-      if (er.code == DOMException.prototype.SYNTAX_ERR) {
+    case window.DOMException:
+      if (er.code == window.DOMException.prototype.SYNTAX_ERR) {
         console.info('ignore invalid selectorText: ' + selectorText);
       } else {
         throw er;
